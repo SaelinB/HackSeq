@@ -1,0 +1,78 @@
+---
+title: "Testing"
+author: "Saelin"
+date: "18/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load}
+library(shiny)
+library(ggplot2)
+library(plyr)
+library(tidyverse)
+library(here)
+library(ggbiplot)
+library(Rtsne)
+library(ggfortify)
+library(cluster)
+```
+
+##PCA
+tidy - each row is gene name, condition and value
+```{r load}
+SC_expression <- read_csv(here::here("data", "04_remove_underscores_average_replicates", "04_SC_expression.csv"))
+```
+
+
+```{r}
+df_expression<- SC_expression %>% 
+  filter(!str_detect(gene, "^SCER_lnc")) %>% #filter out all genes begining with SCER_lnc
+  select(-gene) #select all columns but gene
+```
+
+find PCs:
+```{r Average}
+PCs <- prcomp(df_expression)
+summary(PCs)
+```
+
+##ggbiplot
+```{r Average}
+ggbiplot(PCs, labels=rownames(df_expression))
+```
+
+##ggfortify
+```{r Average}
+autoplot(PCs, data=df_expression, color="gene", label=TRUE, label.size=3, loadings=TRUE)
+```
+
+##clara
+clusters data into k clusters
+```{r Average}
+autoplot(clara(df_expression, 5, metric="euclidean"))
+```
+
+
+```{r Average}
+set.seed(1)
+autoplot(kmeans(df_expression, 5), data=df_expression)
+```
+
+
+SC_expression[]
+
+##T-SNE
+t-SNE is a useful dimensionality reduction method that allows you to visualise data embedded in a lower number of dimensions, e.g. 2, in order to see patterns and trends in the data. It can deal with more complex patterns of Gaussian clusters in multidimensional space compared to PCA. Although is not suited to finding outliers because how the samples are arranged does not directly represent distance, like in PCA.
+
+An intial PCA step is performed first by default
+```{r}
+set.seed(1)
+tsne_out <-Rtsne(df_expression,labels=as.factor(SC_expression$gene))
+plot(tsne_out$Y,col=SC_expression$gene)
+```
+
+##M3C
